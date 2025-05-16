@@ -1,52 +1,60 @@
-import asyncio
-import json
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
 
-from telebot.async_telebot import AsyncTeleBot
+# Store channel messages in-memory (message_id: message object)
+channel_messages = {}
 
-bot = AsyncTeleBot('7942007970:AAHNdBFQ6EC9ScrCjJSCl8lA0hGKi101q6U')
+CHANNEL_ID = -1002664680052  # Telegram channel IDs are negative for supergroups/channels
 
+async def channel_post_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Save new channel messages for searching later
+    msg = update.channel_post
+    if msg:
+        channel_messages[msg.message_id] = msg
 
-@bot.message_handler(commands=['help', 'start'])
-async def send_welcome(message):
-    text = 'Hi, I am EchoBot.\nJust write me something and I will repeat it!'
-    await bot.reply_to(message, text)
-
-
-@bot.message_handler(commands=['search'])
-async def handle_search(message):
-    # Extract the keyword from the command
-    parts = message.text.split(maxsplit=1)
-    if len(parts) < 2:
-        await bot.reply_to(message, "❗ Please provide a search keyword after /search.")
+async def search_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # User sends /search <keyword>
+    if not context.args:
+        await update.message.reply_text("Please provide a keyword to search, e.g. /search blabla")
         return
-    keyword = parts[1].strip().lower()
+    
+    keyword = " ".join(context.args).lower()
+    found_messages = []
 
-    # Ensure the message is a reply to another message
-    if not message.reply_to_message:
-        await bot.reply_to(message, "❗ Please reply to a forwarded message from the channel to search.")
-        return
+    # Search stored messages text for keyword
+    for msg_id, msg in channel_messages.items():
+        if msg.text and keyword in msg.text.lower():
+            found_messages.append(msg)
 
-    fwd = message.reply_to_message
-
-    # Check if the replied message is a forwarded message from a channel
-    if not fwd.forward_from_chat or fwd.forward_from_chat.type != 'channel':
-        await bot.reply_to(message, "❗ The replied message is not a forwarded message from a channel.")
+    if not found_messages:
+        await update.message.reply_text(f"No messages found with keyword: {keyword}")
         return
 
-    # Get the content of the forwarded message (text or caption)
-    content = fwd.text or fwd.caption or ''
-    if keyword in content.lower():
-        # Copy the original message back to the user
-        await bot.copy_message(
-            chat_id=message.chat.id,
-            from_chat_id=fwd.forward_from_chat.id,
-            message_id=fwd.forward_from_message_id
+    # Forward all found messages back to user
+    for msg in found_messages:
+        await context.bot.forward_message(
+            chat_id=update.effective_chat.id,
+            from_chat_id=CHANNEL_ID,
+            message_id=msg.message_id
         )
-    else:
-        await bot.reply_to(message, "❌ No match found in the forwarded message.")
 
-print("Bot started.")
-asyncio.run(bot.polling())
 
-print('bot started')
-asyncio.run(bot.polling())
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Send /search <keyword> to search channel messages.")
+
+if __name__ == '__main__':
+    TOKEN = '7942007970:AAHNdBFQ6EC9ScrCjJSCl8lA0hGKi101q6U'
+
+    app = ApplicationBuilder().token(TOKEN).build()
+
+    # Listen for posts in the channel (only if bot is admin and receives updates)
+    app.add_handler(MessageHandler(filters.ChatType.CHANNEL, channel_post_handler))
+
+    # Command for search
+    app.add_handler(CommandHandler("search", search_command))
+
+    # Start command
+    app.add_handler(CommandHandler("start", start))
+
+    print("Bot started...")
+    app.run_polling()
