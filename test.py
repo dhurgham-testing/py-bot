@@ -19,7 +19,7 @@ async def echo_message(message):
 
 
 @bot.message_handler(func=lambda message: True)
-async def echo_message(message):
+async def echo_message2(message):
     message_dict = message.to_dict()
     message_json = json.dumps(message_dict, indent=2, ensure_ascii=False)
 
@@ -27,5 +27,6 @@ async def echo_message(message):
         await bot.reply_to(message, "Message JSON too long to display.")
     else:
         await bot.reply_to(message, message_json)
+
 print('bot started')
 asyncio.run(bot.polling())
