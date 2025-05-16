@@ -1,4 +1,4 @@
-
+import mishkal.tashkeel
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from pyrogram.errors import FloodWait
@@ -9,6 +9,7 @@ api_hash = "ba3c1b7bbd8de520d2adb0e1187f5622"
 app = Client("search_bot", api_id=api_id, api_hash=api_hash)
 CHANNEL_ID = -1002664680052
 ALLOWED_USERS = [959599690, 996193663]
+vocalizer = mishkal.tashkeel.TashkeelClass()
 
 @app.on_message(filters.private & filters.text)
 async def search_messages(client: Client, message: Message):
@@ -45,6 +46,20 @@ async def search_messages(client: Client, message: Message):
 async def send_chat_id(client: Client, message: Message):
     chat_id = message.chat.id
     await message.reply(f"Chat ID: {chat_id}")
+
+
+@app.on_message(filters.command("harakat"))
+async def add_harakat(client, message):
+    if not message.reply_to_message or not message.reply_to_message.text:
+        await message.reply("يرجى الرد على رسالة تحتوي على نص ليتم تشكيلها.")
+        return
+
+    original_text = message.reply_to_message.text
+    vocalized_text = vocalizer.tashkeel(original_text)
+
+    await message.reply(vocalized_text)
+
+
 
 if __name__ == "__main__":
     app.run()
