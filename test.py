@@ -30,7 +30,6 @@ async def handle_commands(client: Client, message: Message):
 
     text = message.text.strip()
 
-    # ✅ أمر "دورلي"
     if text.startswith("دورلي "):
         try:
             parts = text.split(" ", 1)
@@ -89,7 +88,6 @@ async def handle_commands(client: Client, message: Message):
         except Exception as e:
             await message.reply(f"حدث خطأ أثناء التحميل: {e}")
         finally:
-            print(wait_msg)
             await app.delete_messages(message.chat.id,wait_msg.id)
             if os.path.exists(audio_path):
                 os.remove(audio_path)
