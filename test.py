@@ -55,6 +55,46 @@ async def handle_commands(client: Client, message: Message):
         except FloodWait as e:
             await asyncio.sleep(e.x)
 
+    if text.startswith("/dl "):
+        try:
+            url = text.split(" ", 1)[1]
+        except IndexError:
+            await message.reply("يرجى إرسال رابط بعد /dl")
+            return
+        wait_msg = message.reply("جارٍ تحميل الصوت، انتظر لحظة...")
+        await wait_msg
+
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': 'downloads/%(id)s.%(ext)s',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+            'quiet': True,
+            'no_warnings': True,
+        }
+
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+                filename = ydl.prepare_filename(info)
+                audio_path = os.path.splitext(filename)[0] + ".mp3"
+
+            await client.send_audio(
+                chat_id=message.chat.id,
+                audio=audio_path,
+                caption=f"الصوت من:\n{url}"
+            )
+        except Exception as e:
+            await message.reply(f"حدث خطأ أثناء التحميل: {e}")
+        finally:
+            print(wait_msg)
+            await app.delete_messages(message.chat.id,wait_msg.id)
+            if os.path.exists(audio_path):
+                os.remove(audio_path)
+        return
 
     elif text == "/getthisid":
         await message.reply(f"Chat ID: {message.chat.id}")
@@ -68,50 +108,6 @@ async def handle_commands(client: Client, message: Message):
         harakat = vocalizer.tashkeel(original)
         await message.reply(harakat)
 
-@app.on_message(filters.private & filters.command("dl") & filters.text)
-async def download_audio(client: Client, message: Message):
-    if message.from_user.id not in ALLOWED_USERS:
-        return
-
-    if len(message.command) < 2:
-        await message.reply("Please provide a URL after /dl")
-        return
-
-    url = message.command[1]
-    waitmsg = message.reply("جارٍ تحميل الصوت، انتظر لحظة...")
-    await waitmsg
-
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': 'downloads/%(id)s.%(ext)s',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }],
-        'quiet': True,
-        'no_warnings': True,
-    }
-
-    # Ensure download folder exists
-    os.makedirs("downloads", exist_ok=True)
-
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            filename = ydl.prepare_filename(info)
-            audio_path = os.path.splitext(filename)[0] + ".mp3"
-
-        await client.send_audio(
-            chat_id=message.chat.id,
-            audio=audio_path,
-        )
-    except Exception as e:
-        await message.reply(f"حدث خطأ أثناء التحميل: {e}")
-    finally:
-        await app.delete_messages(message.chat.id,waitmsg.id)
-        if os.path.exists(audio_path):
-            os.remove(audio_path)
 
 if __name__ == "__main__":
     app.run()
