@@ -84,7 +84,7 @@ async def handle_commands(client: Client, message: Message):
             await client.send_audio(
                 chat_id=message.chat.id,
                 audio=audio_path,
-                caption=f"الصوت من:\n{url}"
+                reply_to_message_id=message.id
             )
         except Exception as e:
             await message.reply(f"حدث خطأ أثناء التحميل: {e}")
