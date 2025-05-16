@@ -61,8 +61,7 @@ async def handle_commands(client: Client, message: Message):
         except IndexError:
             await message.reply("يرجى إرسال رابط بعد /dl")
             return
-        wait_msg = message.reply("جارٍ تحميل الصوت، انتظر لحظة...")
-        await wait_msg
+        wait_msg = await message.reply("جارٍ تحميل الصوت، انتظر لحظة...")
 
         ydl_opts = {
             'format': 'bestaudio/best',
