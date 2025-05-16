@@ -30,5 +30,10 @@ async def search_messages(client: Client, message: Message):
         # Handle rate limiting
         await asyncio.sleep(e.x)
 
+@bot.message_handler(commands=['getthisid'])
+async def send_chat_id(message):
+    chat_id = message.chat.id
+    await bot.reply_to(message, f'Chat ID: {chat_id}')
+
 if __name__ == "__main__":
     app.run()
