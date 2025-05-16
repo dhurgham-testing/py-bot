@@ -18,9 +18,9 @@ tashkel = tashkeel
 vocalizer =tashkel.TashkeelClass()
 
 
-# لتنظيف عنوان الفيديو حتى يصير اسم ملف صالح
 def sanitize_filename(name: str) -> str:
     return "".join(c for c in name if c.isalnum() or c in "._- ").strip()
+
 
 @app.on_message(filters.private & filters.text)
 async def handle_commands(client: Client, message: Message):
@@ -37,12 +37,7 @@ async def handle_commands(client: Client, message: Message):
     # ✅ أمر "دورلي"
     if text.startswith("دورلي "):
         try:
-            parts = text.split(" ", 1)
-            if len(parts) < 2:
-                await message.reply("اكتب الكلمة بعد 'دورلي'")
-                return
-
-            keyword = parts[1]
+            keyword = text.split(" ", 1)[1]
             found_any = False
 
             async for msg in app.search_messages(CHANNEL_ID, query=keyword, limit=5):
@@ -59,10 +54,15 @@ async def handle_commands(client: Client, message: Message):
         except FloodWait as e:
             await asyncio.sleep(e.x)
 
-    # 🔊 تحميل صوت
-    elif text.startswith("/audio "):
-        url = text.split(" ", 1)[1]
-        wait_msg = await message.reply("جارٍ تحميل الصوت، انتظر لحظة...")
+    # 🔊 سوي صوت
+    elif text.startswith("سوي صوت"):
+        try:
+            url = text.split(" ", 2)[2]
+        except IndexError:
+            await message.reply("ارسل الرابط بعد 'سوي صوت'")
+            return
+
+        wait_msg = await message.reply("جارٍ تحميل الصوت...")
 
         ydl_opts = {
             'format': 'bestaudio/best',
@@ -89,17 +89,21 @@ async def handle_commands(client: Client, message: Message):
                 reply_to_message_id=message.id
             )
         except Exception as e:
-            await message.reply(f"حدث خطأ أثناء التحميل: {e}")
+            await message.reply(f"صار خطأ بالتحميل: {e}")
         finally:
             await app.delete_messages(message.chat.id, wait_msg.id)
             if os.path.exists(audio_path):
                 os.remove(audio_path)
-        return
 
-    # 📹 تحميل فيديو
-    elif text.startswith("/video "):
-        url = text.split(" ", 1)[1]
-        wait_msg = await message.reply("جارٍ تحميل الفيديو، انتظر لحظة...")
+    # 📹 سوي فيديو
+    elif text.startswith("سوي فيديو"):
+        try:
+            url = text.split(" ", 2)[2]
+        except IndexError:
+            await message.reply("ارسل الرابط بعد 'سوي فيديو'")
+            return
+
+        wait_msg = await message.reply("جارٍ تحميل الفيديو...")
 
         ydl_opts = {
             'format': 'best',
@@ -122,12 +126,11 @@ async def handle_commands(client: Client, message: Message):
                 reply_to_message_id=message.id
             )
         except Exception as e:
-            await message.reply(f"حدث خطأ أثناء التحميل: {e}")
+            await message.reply(f"صار خطأ بالتحميل: {e}")
         finally:
             await app.delete_messages(message.chat.id, wait_msg.id)
             if os.path.exists(video_path):
                 os.remove(video_path)
-        return
 
     elif text == "/getthisid":
         await message.reply(f"Chat ID: {message.chat.id}")
