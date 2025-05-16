@@ -42,14 +42,31 @@ async def search_messages(client: Client, message: Message):
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
-@app.on_message(filters.command("getthisid") & filters.private)
-async def send_chat_id(client: Client, message: Message):
+@app.on_message(filters.private & filters.text)
+async def handle_getthisid(client, message):
+    if not message.text:
+        return
+    if not message.text.startswith("/getthisid"):
+        return
+
+    if message.from_user.id not in ALLOWED_USERS:
+        return
+
     chat_id = message.chat.id
     await message.reply(f"Chat ID: {chat_id}")
 
 
-@app.on_message(filters.command("harakat"))
-async def add_harakat(client, message):
+
+@app.on_message(filters.private & filters.text)
+async def handle_harakat(client, message):
+    if not message.text:
+        return
+    if not message.text.startswith("/harakat"):
+        return
+
+    if message.from_user.id not in ALLOWED_USERS:
+        return
+
     if not message.reply_to_message or not message.reply_to_message.text:
         await message.reply("يرجى الرد على رسالة تحتوي على نص ليتم تشكيلها.")
         return
@@ -57,11 +74,12 @@ async def add_harakat(client, message):
     original_text = message.reply_to_message.text
     try:
         vocalized_text = vocalizer.tashkeel(original_text)
-    except Exception as e:
+    except Exception:
         await message.reply("خطأ في تشكيل النص.")
         return
 
     await message.reply(vocalized_text)
+
 
 
 
