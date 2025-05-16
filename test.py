@@ -55,7 +55,11 @@ async def add_harakat(client, message):
         return
 
     original_text = message.reply_to_message.text
-    vocalized_text = vocalizer.tashkeel(original_text)
+    try:
+        vocalized_text = vocalizer.tashkeel(original_text)
+    except Exception as e:
+        await message.reply("خطأ في تشكيل النص.")
+        return
 
     await message.reply(vocalized_text)
 
