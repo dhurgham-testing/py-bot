@@ -20,8 +20,12 @@ async def search_messages(client, message):
         found_any = False
         async for msg in app.search_messages(CHANNEL_ID, query=keyword, limit=5):
             found_any = True
-            content = msg.text or msg.caption or "[No text content]"
-            await message.reply(f"Found: {content}", quote=True)
+            # Forward the found message from the channel to the user
+            await app.forward_messages(
+                chat_id=message.chat.id,       # who to send to (the user)
+                from_chat_id=CHANNEL_ID,       # where from (the channel)
+                message_ids=msg.message_id     # message id to forward
+            )
 
         if not found_any:
             await message.reply("No matching messages found.")
