@@ -21,7 +21,7 @@ DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 tashkel = tashkeel
 vocalizer =tashkel.TashkeelClass()
-openai_api_key = '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'
+openai_api_key = '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'
 
 async def ask_gpt4o_mini(prompt: str) -> str:
     url = "https://api.openai.com/v1/chat/completions"
