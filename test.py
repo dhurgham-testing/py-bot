@@ -178,28 +178,30 @@ async def handle_commands(client: Client, message: Message):
         await wait_msg.delete()
 
     elif text == "/analyse":
-        wait_msg = await message.reply("جاري جلب آخر 50 رسالة وتحليلها...")
+    wait_msg = await message.reply("جاري جلب آخر 50 رسالة وتحليلها...")
 
-        try:
-            msgs = []
-            async for msg in client.iter_history(message.chat.id, limit=50):
-                if msg.text:
-                    msgs.append(msg.text.strip())
+    try:
+        msgs = []
+        history = await app.get_history(chat_id=message.chat.id, limit=50)
+        for msg in history:
+            if msg.text:
+                msgs.append(msg.text.strip())
 
-            if not msgs:
-                await wait_msg.edit("ماكو رسائل نصية كافية للتحليل.")
-                return
+        if not msgs:
+            await wait_msg.edit("ماكو رسائل نصية كافية للتحليل.")
+            return
 
-            prompt = (
-                    "من هذه رسائلنا ، ماذا تضن نحن ؟ هل جيدين ؟ اعطنا رائيك الجيد والسئ\n\n"
-                    + "\n\n".join(msgs)
-            )
+        prompt = (
+            "من هذه رسائلنا ، ماذا تضن نحن ؟ هل جديدين ؟ اعطنا رائيك الجيد والسئ\n\n"
+            + "\n\n".join(msgs)
+        )
 
-            answer = await ask_groq_chat(prompt)
-            await wait_msg.edit(answer)
+        answer = await ask_groq_chat(prompt)
+        await wait_msg.edit(answer)
 
-        except Exception as e:
-            await wait_msg.edit(f"صار خطأ بالاتصال بالذكاء الاصطناعي: {e}")
+    except Exception as e:
+        await wait_msg.edit(f"صار خطأ بالاتصال بالذكاء الاصطناعي: {e}")
+
             
     elif text == "/getthisid":
         await message.reply(f"Chat ID: {message.chat.id}")
