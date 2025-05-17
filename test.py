@@ -38,9 +38,21 @@ async def ask_openrouter(prompt: str) -> str:
                 }
             )
             data = res.json()
-            return data["choices"][0]["message"]["content"].strip()
+
+            # طباعة الداتا للديباغ إذا احتاجت تعرف السبب
+            print("Response:", data)
+
+            if "choices" in data:
+                return data["choices"][0]["message"]["content"].strip()
+            elif "error" in data:
+                return f"خطأ من OpenRouter: {data['error'].get('message', 'غير معروف')}"
+            else:
+                return f"استجابة غير مفهومة: {data}"
+
     except Exception as e:
-        return f"صار خطأ: {e}"
+        return f"صار خطأ داخلي: {e}"
+
+
 # لتنظيف عنوان الفيديو حتى يصير اسم ملف صالح
 def sanitize_filename(name: str) -> str:
     return "".join(c for c in name if c.isalnum() or c in "._- ").strip()
