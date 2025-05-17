@@ -6,11 +6,13 @@ from pyrogram import Client, filters
 from pyrogram.types import Message
 from pyrogram.errors import FloodWait
 from mishkal import tashkeel
-
+import httpx
 
 
 api_id = 1040477
 api_hash = "ba3c1b7bbd8de520d2adb0e1187f5622"
+openrouter_api_key = "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"
+
 
 app = Client("search_bot", api_id=api_id, api_hash=api_hash)
 CHANNEL_ID = -1002664680052
@@ -21,6 +23,24 @@ tashkel = tashkeel
 vocalizer =tashkel.TashkeelClass()
 
 
+ssync def ask_openrouter(prompt: str) -> str:
+    try:
+        async with httpx.AsyncClient() as client:
+            res = await client.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {openrouter_api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "openai/gpt-3.5-turbo",
+                    "messages": [{"role": "user", "content": prompt}],
+                }
+            )
+            data = res.json()
+            return data["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        return f"صار خطأ: {e}"
 # لتنظيف عنوان الفيديو حتى يصير اسم ملف صالح
 def sanitize_filename(name: str) -> str:
     return "".join(c for c in name if c.isalnum() or c in "._- ").strip()
@@ -142,7 +162,18 @@ async def handle_commands(client: Client, message: Message):
             if os.path.exists(video_path):
                 os.remove(video_path)
 
+    elif text.startswith("ذكاء نص ردن"):
+        if len(text.split(" ", 2)) < 3:
+            await message.reply("اكتب السؤال بعد 'ذكاء نص ردن'")
+            return
 
+        question = text.split(" ", 2)[2]
+        wait_msg = await message.reply("جاري التفكير 💭...")
+
+        answer = await ask_openrouter(question)
+        await message.reply(answer)
+        await wait_msg.delete()
+        
     elif text == "/getthisid":
         await message.reply(f"Chat ID: {message.chat.id}")
 
