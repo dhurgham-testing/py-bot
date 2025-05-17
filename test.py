@@ -21,25 +21,24 @@ DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 tashkel = tashkeel
 vocalizer =tashkel.TashkeelClass()
-openai_api_key = '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'
-
-async def ask_gpt4o_mini(prompt: str) -> str:
-    url = "https://api.openai.com/v1/chat/completions"
+groq_api_key = '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'
+groq_url = "https://api.groq.com/openai/v1/chat/completions"
+async def ask_groq_chat(prompt: str) -> str:
     headers = {
-        "Authorization": f"Bearer {openai_api_key}",
-        "Content-Type": "application/json"
+        "Authorization": f"Bearer {groq_api_key}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
     }
     json_data = {
-        "model": "gpt-4o-mini",
+        "model": "llama-3.3-70b-versatile",
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": 500,
         "temperature": 0.7,
         "top_p": 1,
         "n": 1,
-        "stop": None
     }
     async with httpx.AsyncClient() as client:
-        response = await client.post(url, headers=headers, json=json_data)
+        response = await client.post(groq_url, headers=headers, json=json_data)
         response.raise_for_status()
         data = response.json()
         return data["choices"][0]["message"]["content"].strip()
@@ -174,7 +173,7 @@ async def handle_commands(client: Client, message: Message):
         question = text.split(" ", 2)[2]
         wait_msg = await message.reply("جاري التفكير 💭...")
 
-        answer = await ask_gpt4o_mini(question)
+        answer = await ask_groq_chat(question)
         await message.reply(answer)
         await wait_msg.delete()
 
