@@ -21,36 +21,28 @@ DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 tashkel = tashkeel
 vocalizer =tashkel.TashkeelClass()
+openai_api_key = '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'
 
-
-async def ask_openrouter(prompt: str) -> str:
-    try:
-        async with httpx.AsyncClient() as client:
-            res = await client.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {openrouter_api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": "openai/gpt-3.5-turbo",
-                    "messages": [{"role": "user", "content": prompt}],
-                }
-            )
-            data = res.json()
-
-            # طباعة الداتا للديباغ إذا احتاجت تعرف السبب
-            print("Response:", data)
-
-            if "choices" in data:
-                return data["choices"][0]["message"]["content"].strip()
-            elif "error" in data:
-                return f"خطأ من OpenRouter: {data['error'].get('message', 'غير معروف')}"
-            else:
-                return f"استجابة غير مفهومة: {data}"
-
-    except Exception as e:
-        return f"صار خطأ داخلي: {e}"
+async def ask_gpt4o_mini(prompt: str) -> str:
+    url = "https://api.openai.com/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {openai_api_key}",
+        "Content-Type": "application/json"
+    }
+    json_data = {
+        "model": "gpt-4o-mini",
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 500,
+        "temperature": 0.7,
+        "top_p": 1,
+        "n": 1,
+        "stop": None
+    }
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, json=json_data)
+        response.raise_for_status()
+        data = response.json()
+        return data["choices"][0]["message"]["content"].strip()
 
 
 # لتنظيف عنوان الفيديو حتى يصير اسم ملف صالح
@@ -182,7 +174,7 @@ async def handle_commands(client: Client, message: Message):
         question = text.split(" ", 2)[2]
         wait_msg = await message.reply("جاري التفكير 💭...")
 
-        answer = await ask_openrouter(question)
+        answer = await openai_api_key(question)
         await message.reply(answer)
         await wait_msg.delete()
 
