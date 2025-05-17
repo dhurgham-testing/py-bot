@@ -23,7 +23,7 @@ tashkel = tashkeel
 vocalizer =tashkel.TashkeelClass()
 
 
-ssync def ask_openrouter(prompt: str) -> str:
+async def ask_openrouter(prompt: str) -> str:
     try:
         async with httpx.AsyncClient() as client:
             res = await client.post(
@@ -173,7 +173,7 @@ async def handle_commands(client: Client, message: Message):
         answer = await ask_openrouter(question)
         await message.reply(answer)
         await wait_msg.delete()
-        
+
     elif text == "/getthisid":
         await message.reply(f"Chat ID: {message.chat.id}")
 
