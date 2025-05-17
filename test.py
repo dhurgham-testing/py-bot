@@ -1,9 +1,10 @@
 import os
+import uuid
 import yt_dlp
+import asyncio
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from pyrogram.errors import FloodWait
-import asyncio
 from mishkal import tashkeel
 
 
@@ -14,13 +15,15 @@ api_hash = "ba3c1b7bbd8de520d2adb0e1187f5622"
 app = Client("search_bot", api_id=api_id, api_hash=api_hash)
 CHANNEL_ID = -1002664680052
 ALLOWED_USERS = [959599690, 996193663]
+DOWNLOAD_DIR = "downloads"
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 tashkel = tashkeel
 vocalizer =tashkel.TashkeelClass()
 
 
+# لتنظيف عنوان الفيديو حتى يصير اسم ملف صالح
 def sanitize_filename(name: str) -> str:
     return "".join(c for c in name if c.isalnum() or c in "._- ").strip()
-
 
 @app.on_message(filters.private & filters.text)
 async def handle_commands(client: Client, message: Message):
@@ -37,7 +40,12 @@ async def handle_commands(client: Client, message: Message):
     # ✅ أمر "دورلي"
     if text.startswith("دورلي "):
         try:
-            keyword = text.split(" ", 1)[1]
+            parts = text.split(" ", 1)
+            if len(parts) < 2:
+                await message.reply("اكتب الكلمة بعد 'دورلي'")
+                return
+
+            keyword = parts[1]
             found_any = False
 
             async for msg in app.search_messages(CHANNEL_ID, query=keyword, limit=5):
@@ -54,7 +62,7 @@ async def handle_commands(client: Client, message: Message):
         except FloodWait as e:
             await asyncio.sleep(e.x)
 
-    # 🔊 سوي صوت
+    # 🔊 تحميل صوت
     elif text.startswith("سوي صوت"):
         try:
             url = text.split(" ", 2)[2]
@@ -64,9 +72,10 @@ async def handle_commands(client: Client, message: Message):
 
         wait_msg = await message.reply("جارٍ تحميل الصوت...")
 
+        random_name = str(uuid.uuid4())
         ydl_opts = {
             'format': 'bestaudio/best',
-            'outtmpl': 'downloads/%(title)s.%(ext)s',
+            'outtmpl': f"{DOWNLOAD_DIR}/{random_name}.%(ext)s",
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
@@ -79,8 +88,8 @@ async def handle_commands(client: Client, message: Message):
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
-                title = sanitize_filename(info.get("title", "audio"))
-                audio_path = f"downloads/{title}.mp3"
+                title = info.get("title", "الصوت")
+                audio_path = os.path.join(DOWNLOAD_DIR, f"{random_name}.mp3")
 
             await client.send_audio(
                 chat_id=message.chat.id,
@@ -95,7 +104,7 @@ async def handle_commands(client: Client, message: Message):
             if os.path.exists(audio_path):
                 os.remove(audio_path)
 
-    # 📹 سوي فيديو
+    # 🎥 تحميل الفيديو
     elif text.startswith("سوي فيديو"):
         try:
             url = text.split(" ", 2)[2]
@@ -105,9 +114,10 @@ async def handle_commands(client: Client, message: Message):
 
         wait_msg = await message.reply("جارٍ تحميل الفيديو...")
 
+        random_name = str(uuid.uuid4())
         ydl_opts = {
             'format': 'best',
-            'outtmpl': 'downloads/%(title)s.%(ext)s',
+            'outtmpl': f"{DOWNLOAD_DIR}/{random_name}.%(ext)s",
             'quiet': True,
             'no_warnings': True,
         }
@@ -115,9 +125,9 @@ async def handle_commands(client: Client, message: Message):
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
-                title = sanitize_filename(info.get("title", "video"))
+                title = info.get("title", "الفيديو")
                 ext = info.get("ext", "mp4")
-                video_path = f"downloads/{title}.{ext}"
+                video_path = os.path.join(DOWNLOAD_DIR, f"{random_name}.{ext}")
 
             await client.send_video(
                 chat_id=message.chat.id,
@@ -131,6 +141,7 @@ async def handle_commands(client: Client, message: Message):
             await app.delete_messages(message.chat.id, wait_msg.id)
             if os.path.exists(video_path):
                 os.remove(video_path)
+
 
     elif text == "/getthisid":
         await message.reply(f"Chat ID: {message.chat.id}")
