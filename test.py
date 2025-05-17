@@ -174,7 +174,7 @@ async def handle_commands(client: Client, message: Message):
         question = text.split(" ", 2)[2]
         wait_msg = await message.reply("جاري التفكير 💭...")
 
-        answer = await openai_api_key(question)
+        answer = await ask_gpt4o_mini(question)
         await message.reply(answer)
         await wait_msg.delete()
 
