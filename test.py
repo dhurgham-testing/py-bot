@@ -53,10 +53,10 @@ async def handle_commands(client: Client, message: Message):
     if message.from_user.id not in ALLOWED_USERS:
         return
 
-    if message.from_user.id == 959599690 and message.chat.id == 996193663:
-        harakat = vocalizer.tashkeel(message.text)
-        if harakat != message.text:
-            await app.edit_message_text(message.chat.id, message.id, harakat)
+    # if message.from_user.id == 959599690 and message.chat.id == 996193663:
+    #     harakat = vocalizer.tashkeel(message.text)
+    #     if harakat != message.text:
+    #         await app.edit_message_text(message.chat.id, message.id, harakat)
 
     text = message.text.strip()
 
