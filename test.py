@@ -177,32 +177,50 @@ async def handle_commands(client: Client, message: Message):
         await message.reply(answer)
         await wait_msg.delete()
 
+
     elif text == "/analyse":
-    wait_msg = await message.reply("جاري جلب آخر 50 رسالة وتحليلها...")
-
-    try:
-        msgs = []
-        history = await app.get_history(chat_id=message.chat.id, limit=50)
-        for msg in history:
-            if msg.text:
-                msgs.append(msg.text.strip())
-
-        if not msgs:
-            await wait_msg.edit("ماكو رسائل نصية كافية للتحليل.")
+        if not message.reply_to_message:
+            await message.reply("يرجى الرد على رسالة لتحديد بداية التحليل.")
             return
 
+        start_id = message.reply_to_message.id
+        end_id = message.id
+        chat_id = message.chat.id
+
+        if end_id < start_id:
+            await message.reply("رسالة /analyze يجب أن تكون بعد الرسالة التي تم الرد عليها.")
+            return
+
+        messages = []
+        async for msg in client.get_chat_history(chat_id, offset_id=end_id):
+            if msg.id < start_id:
+                break
+            if not getattr(msg, "empty", False):
+                messages.append(msg)
+
+        if not messages:
+            await message.reply("لم يتم العثور على رسائل في النطاق المحدد.")
+            return
+
+        texts = [msg.text or "" for msg in reversed(messages)]
+
         prompt = (
-            "من هذه رسائلنا ، ماذا تضن نحن ؟ هل جديدين ؟ اعطنا رائيك الجيد والسئ\n\n"
-            + "\n\n".join(msgs)
+                "من هذه رسائلنا، ماذا تظن نحن؟ هل نحن جدد؟ أعطنا رأيك الجيد والسيئ:\n\n"
+                + "\n".join(texts)
         )
 
-        answer = await ask_groq_chat(prompt)
-        await wait_msg.edit(answer)
+        wait_msg = await message.reply("جاري تحليل الرسائل...")
 
-    except Exception as e:
-        await wait_msg.edit(f"صار خطأ بالاتصال بالذكاء الاصطناعي: {e}")
+        try:
+            answer = await ask_groq_chat(prompt)
+            await message.reply(answer)
+        except Exception as e:
+            await message.reply(f"حدث خطأ أثناء الاتصال بـ Groq AI: {e}")
+        finally:
+            await wait_msg.delete()
 
-            
+        return
+
     elif text == "/getthisid":
         await message.reply(f"Chat ID: {message.chat.id}")
 
