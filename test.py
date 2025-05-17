@@ -170,7 +170,7 @@ async def handle_commands(client: Client, message: Message):
             await message.reply("اكتب السؤال بعد 'ذكاء نص ردن'")
             return
 
-        question = text.split(" ", 2)[2]
+        question = text.split(" ", 3)[3]
         wait_msg = await message.reply("جاري التفكير 💭...")
 
         answer = await ask_groq_chat(question)
